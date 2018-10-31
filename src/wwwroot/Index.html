@@ -7,32 +7,33 @@
 </head>
 <body>
 <header><h1>DeStream</h1></header>
-<section id="Login" hidden>
+<section id="Login" hidden class="LoginClass">
     <article>
-        <div>Create wallet</div>
-        Password: <span id="NewPassword" contenteditable="true"></span>
-        <div id="CreateWallet" onclick="CreateWalletClick()">button</div>
+        <label for="NewPassword">Password:</label><input id="NewPassword"/>
+        <br/>
+        <button id="CreateWallet" onclick="CreateWalletClick()">CREATE</button>
     </article>
     <article>
-        <div>Recover wallet</div>
-        <div>Password: <span id="RecoverPassword" contenteditable="true"></span></div>
-        <div>Mnemonic: <span id="Mnemonic" contenteditable="true"></span></div>
-        <div>Creation date: <span id="CreationDate" contenteditable="true"></span></div>
-        <div id="RecoverWallet" onclick="RecoverWalletClick()">button</div>
+        <label for="RecoverPassword">Password: </label><input id="RecoverPassword"/>
+        <br/>
+        <label for="Mnemonic">Mnemonic:</label><input id="Mnemonic" contenteditable="true">
+        <br/>
+        <label for="CreationDate">Creation date: </label><input id="CreationDate" contenteditable="true">
+        <br/>
+        <button id="RecoverWallet" onclick="RecoverWalletClick()">RECOVER</button>
     </article>
 </section>
 <section id="WalletInfo" hidden>
     <header>
-        <div id="TotalValue">asdf</div>
+        <div id="TotalValue"></div>
         <div>
-            <div onclick="ProcessSendDialog()">SEND</div>
-            <div id="SendDialog" hidden>
-                <div id="SendAddress" contenteditable="true">asdf</div>
-                <div id="SendAmount" contenteditable="true">f2q3f</div>
+            <div>
+                <div id="SendAddress" contenteditable="true"></div>
+                <div id="SendAmount" contenteditable="true"></div>
                 <div id="SendTransaction" onclick="SendTransactionClick()">Send</div>
             </div>
             <div onclick="ProcessRecieveTransaction()">RECIEVE</div>
-            <div id="RecieveDialog" hidden></div>
+            <div id="RecieveDialog"></div>
         </div>
         <div>
             <div>ALL</div>
