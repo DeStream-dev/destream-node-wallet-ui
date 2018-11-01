@@ -1,9 +1,11 @@
+module App{
+
 const api: string = "http://localhost:56864/api";
 let WalletName: string = null;
 const AccountName: string = "account 0";
 
 function CheckWallet() {
-    fetch(api +'/Wallet/files').then(response => response.json().then(json => {
+    fetch(api + '/Wallet/files').then(response => response.json().then(json => {
         console.log(json.walletsFiles);
         console.log(json.walletsFiles.includes("DeStreamUiWallet.wallet.json"));
         if (json.walletsFiles.includes("DeStreamUiWallet.wallet.json")) {
@@ -170,4 +172,5 @@ function ProcessSendDialog() {
 
 function SendTransactionClick() {
     SendTransaction(document.getElementById("SendAddress").textContent, Number(document.getElementById("SendAmount").textContent));
+}
 }

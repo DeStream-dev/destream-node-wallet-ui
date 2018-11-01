@@ -1,62 +1,241 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>DeStream wallet</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/jquery.min.js"></script>
     <link rel="stylesheet" type="text/css" href="Index.css">
+
+
 </head>
-<body>
-<header><h1>DeStream</h1></header>
-<section id="Login" hidden class="LoginClass">
-    <article>
-        <label for="NewPassword">Password:</label><input id="NewPassword"/>
-        <br/>
-        <button id="CreateWallet" onclick="CreateWalletClick()">CREATE</button>
-    </article>
-    <article>
-        <label for="RecoverPassword">Password: </label><input id="RecoverPassword"/>
-        <br/>
-        <label for="Mnemonic">Mnemonic:</label><input id="Mnemonic" contenteditable="true">
-        <br/>
-        <label for="CreationDate">Creation date: </label><input id="CreationDate" contenteditable="true">
-        <br/>
-        <button id="RecoverWallet" onclick="RecoverWalletClick()">RECOVER</button>
-    </article>
-</section>
-<section id="WalletInfo" hidden>
-    <header>
-        <div id="TotalValue"></div>
-        <div>
-            <div>
-                <div id="SendAddress" contenteditable="true"></div>
-                <div id="SendAmount" contenteditable="true"></div>
-                <div id="SendTransaction" onclick="SendTransactionClick()">Send</div>
-            </div>
-            <div onclick="ProcessRecieveTransaction()">RECIEVE</div>
-            <div id="RecieveDialog"></div>
-        </div>
-        <div>
-            <div>ALL</div>
-            <div>SENT</div>
-            <div>RECIEVE</div>
+<body ng-app="WalletApp">
+    <header class="navbar navbar-expand navbar-dark flex-column flex-md-row bd-navbar">
+        <a class="navbar-brand mr-0 mr-md-2" href="/" aria-label="Bootstrap">
+            <img src="/img/logo.svg" width="152" height="40" alt="">
+        </a>
+        <div class="navbar-nav-scroll">
         </div>
     </header>
-    <article>
-        <div>RECIEVED</div>
-        <div>3 DST</div>
-        <div>Unconfirmed</div>
-        <div>3 sec ago</div>
-        <div>ID</div>
-        <div>From</div>
-        <div>Fees</div>
-        <div>DateTime</div>
-        <div>To</div>
-    </article>
-</section>
-<script src="Index.js" defer></script>
+    <section>
+        <div class="container-fluid" style="" ng-controller="WalletController">
+            <div class="loading-mask" ng-show="loading"></div>
+            <div class="alert alert-danger" role="alert" ng-show="error">
+                {{error}}
+            </div>
+            <div class="text-center">
+                <h2>
+                    Wallets List
+                </h2>
+            </div>
+            <div class="text-right" style="margin-bottom:25px">
+                <button class="btn btn-primary" ng-click="vm.showRecoverWalletModal()">Recover wallet</button>
+                <button class="btn btn-primary" ng-show="wallets.length" ng-click="vm.showCreateWalletModal()">Create wallet</button>
+            </div>
+            <div class="row">
+                <div class="col-md-12 column" style="max-height:800px;overflow-y:auto">
+                    <div class="box box-element">
+                        <div class="view" ng-cloak>
+                            <table class="table" contenteditable="true">
+                                <thead>
+                                    <tr>
+                                        <th>Wallet Name</th>
+                                        <th>Addresses</th>
+                                        <th>Confirmed Balance</th>
+                                        <th>Unconfirmed Balance</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="item in wallets">
+                                        <td>{{item.walletName}}</td>
+                                        <td>
+                                            <div ng-repeat="address in item.addresses">{{address.address}}</div>
+                                        </td>
+                                        <td>{{item.amountConfirmed}} DST</td>
+                                        <td>{{item.amountUnconfirmed}} DST</td>
+                                        <td><button class="btn btn-success" ng-click="vm.showSendDstModal(item)">Send</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="modal fade  modal-form" id="modalCreateWallet" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">New Wallet</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form">
+                                <div ng-show="newWallet.mnemonic">
+                                    <div class="alert alert-success" role="alert">
+                                        <h4 class="alert-heading">Wallet created successfully!</h4>
+                                        <p>Save your wallet mnemonic:</p>
+                                        <hr>
+                                        <p class="mb-0">{{newWallet.mnemonic}}</p>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button class="btn btn-primary" data-toggle="modal" data-dismiss="modal">
+                                            OK
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form name="createWalletForm" autocomplete="off" ng-show="!newWallet.mnemonic">
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="walletName">Wallet Name</label>
+                                        <input type="text" id="walletName" class="form-control" ng-model="newWallet.name" required maxlength="50">
+                                    </div>
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="password">Password</label>
+                                        <input type="password" autocomplete="new" maxlength="100" ng-model="newWallet.password" required id="password" class="form-control">
+                                    </div>
+                                    <div class="alert alert-danger" role="alert" ng-show="newWallet.walletCreationError">
+                                        {{newWallet.walletCreationError}}
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button class="btn btn-danger" data-toggle="modal" data-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                        <button class="btn btn-primary" type="submit" ng-disabled="createWalletForm.$invalid" ng-click="vm.createWallet()">
+                                            Create wallet
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade  modal-form" id="sendDstModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Send DST</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form">
+                                <div ng-show="sendDst.sent">
+                                    <div class="alert alert-success" role="alert">
+                                        <h4 style="word-break:break-all" class="alert-heading">Transaction {{sendDst.transactionId}} to send DST created successfully!</h4>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button class="btn btn-primary" data-toggle="modal" data-dismiss="modal">
+                                            OK
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form name="sednDstForm" autocomplete="off" ng-show="!sendDst.sent">
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="sendDstPassword">Password</label>
+                                        <input type="password" autocomplete="new" maxlength="100" ng-model="sendDst.password" required id="sendDstPassword" class="form-control">
+                                    </div>
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="destAddr">Destination Address</label>
+                                        <input type="text" autocomplete="new" maxlength="50" ng-model="sendDst.destinationAddress" required id="destAddr" class="form-control">
+                                    </div>
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="dstAmount">DST Amount</label>
+                                        <input type="number" min="0.005" autocomplete="new" maxlength="50" ng-model="sendDst.amount" required id="dstAmount" class="form-control">
+                                    </div>
+                                    <div class="alert alert-danger" role="alert" ng-show="sendDst.sendDstError">
+                                        {{sendDst.sendDstError}}
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button class="btn btn-danger" data-toggle="modal" data-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                        <button class="btn btn-primary" type="submit" ng-disabled="sednDstForm.$invalid" ng-click="vm.sendDst()">
+                                            Send
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade  modal-form" id="recoverWalletModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Recover Wallet</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form">
+                                <div ng-show="recoverWalletObject.recovered">
+                                    <div class="alert alert-success" role="alert">
+                                        <h4 style="word-break:break-all" class="alert-heading">Wallet {{recoverWalletObject.name}} recovered.</h4>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button class="btn btn-primary" data-toggle="modal" data-dismiss="modal">
+                                            OK
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form name="recoverWalletForm" autocomplete="off" ng-show="!recoverWalletObject.recovered">
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="recoverWalletPassword">Password</label>
+                                        <input type="password" autocomplete="new1" maxlength="100" ng-model="recoverWalletObject.password" required id="recoverWalletPassword" class="form-control">
+                                    </div>
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="recoverMnemonic">Mnemonic</label>
+                                        <input type="text" maxlength="200" ng-model="recoverWalletObject.mnemonic" required id="recoverMnemonic" class="form-control">
+                                    </div>
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="recoverWalletDate">Wallet Creation Date</label>
+                                        <input type="date" ng-model="recoverWalletObject.creationDate" required id="recoverWalletDate" class="form-control">
+                                    </div>
+                                    <div class="form-group" aria-required="true">
+                                        <label class="control-label" for="recoverWalletName">New Wallet Name</label>
+                                        <input type="text" autocomplete="new" maxlength="50" ng-model="recoverWalletObject.name" required id="recoverWalletName" class="form-control">
+                                    </div>
+
+                                    <div class="alert alert-danger" role="alert" ng-show="recoverWalletObject.recoverError">
+                                        {{recoverWalletObject.recoverError}}
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button class="btn btn-danger" data-toggle="modal" data-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                        <button class="btn btn-primary" type="submit" ng-disabled="recoverWalletForm.$invalid" ng-click="vm.recoverWallet()">
+                                            Recover
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+    <!--<script src="js/jquery.min.js"></script>-->
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/bundle.js"></script>
 </body>
 <footer>
-    <hr/>
+    <hr />
     DeStream (C) 2018. All rights reserved.
 </footer>
 </html>

@@ -21,12 +21,12 @@ aside
     border:double 3px #b200ff;
 }
 
-section
+/*section
 {
     padding:5px;
     border:dashed 3px #0026ff;
     margin-top:5px;
-}
+}*/
 
 footer
 {
@@ -49,9 +49,32 @@ ul li
     font-weight:bold;
 }
 
-.LoginClass
-{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
+body {
+    background-color: #ffffff;
+    color: #0b1f30;
+    background-image: none;
+}
+
+.loading-mask {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    background: url(/img/ajax-loader.gif) center center no-repeat rgba(255, 255, 255, 0.5);
+    z-index: 10000;
+    cursor: default;
+}
+
+.bd-navbar {
+    min-height: 4rem;
+    background: linear-gradient(to right, rgba(180,33,146,1) 0%,rgba(83,33,191,1) 100%);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.05), inset 0 -1px 0 rgba(0,0,0,.1);
+}
+
+section {
+    padding-left: 25px;
+    padding-right: 25px;
+    margin-top:25px;
 }
