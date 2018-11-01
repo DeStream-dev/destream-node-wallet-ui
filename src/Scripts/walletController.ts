@@ -77,7 +77,7 @@ export class WalletController implements ng.IController {
         this.$http.get<WalletFilesModel>(this.Api + "files").then(res => {
 
             let walletFiles = res.data;
-            if (walletFiles && walletFiles.walletsFiles) {
+            if (walletFiles && walletFiles.walletsFiles.length) {
                 let wallets = new Array<WalletModel>();
                 walletFiles.walletsFiles.forEach((value, index, arr) => {
                     let walletName: string = value.substr(0, value.indexOf(".wallet"));
