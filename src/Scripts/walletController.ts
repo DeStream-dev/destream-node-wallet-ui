@@ -5,7 +5,7 @@ import angular = require("angular");
 export class WalletController implements ng.IController {
     private readonly Api: string = "http://localhost:56864/api/Wallet/";
     private readonly AccountName = "account 0";
-
+    private readonly Satoshis = 0.00000001;
 
 
     constructor(private $scope: IWalletScope, private $http: ng.IHttpService, private errorService: Services.ErrorService,
@@ -59,65 +59,62 @@ export class WalletController implements ng.IController {
                         this.$scope.sendDst.sent = true;
                         this.loadWalletFiles();
                         this.$scope.sendDst.transactionId = builTransactionResult.transactionId;
-                    }, 2000);
+                    }, 8000);
 
                 }, err => {
+                    console.error(err);
                     this.$scope.loading = false;
                     this.$scope.sendDst.sendDstError = this.errorService.getErrorMessage(err);
-
                 });
             }
         }, err => {
+            console.error(err);
             this.$scope.sendDst.sendDstError = this.errorService.getErrorMessage(err);
             this.$scope.loading = false;
         });
     }
 
-    private loadWalletFiles() {
+    loadWalletFiles() {
+        this.$scope.loading = true;
         this.$http.get<WalletFilesModel>(this.Api + "files").then(res => {
 
             let walletFiles = res.data;
             if (walletFiles && walletFiles.walletsFiles.length) {
                 let wallets = new Array<WalletModel>();
-                walletFiles.walletsFiles.forEach((value, index, arr) => {
-                    let walletName: string = value.substr(0, value.indexOf(".wallet"));
+                for (let i = 0; i < walletFiles.walletsFiles.length; i++) {
+                    this.$timeout(() => {
+                        let value = walletFiles.walletsFiles[i];
+                        let walletName: string = value.substr(0, value.indexOf(".wallet"));
 
-                    this.$http.get<WalletAddressesResponseModel>(this.Api + "addresses?WalletName=" + walletName + "&AccountName=" + this.AccountName).then(res => {
-                        var wallet = new WalletModel();
-                        wallet.walletName = walletName;
-                        if (res.data) {
-                            wallet.addresses = res.data.addresses.filter(x => !x.isChange);
-                        }
-                        this.$http.get<WalletBalanceResponseModel>(this.Api + "balance?WalletName=" + walletName + "&AccountName=" + this.AccountName).then(res => {
-                            if (res.data && res.data.balances) {
-                                let satoshis = 0.00000001;
-                                var balance = res.data.balances[0];
-                                wallet.amountConfirmed = balance.amountConfirmed * satoshis;
-                                wallet.amountUnconfirmed = balance.amountUnconfirmed * satoshis;
-                                wallets.push(wallet);
-                                if (index == arr.length - 1) {
-                                    wallets = wallets.sort((a, b) => {
-                                        if (a.walletName > b.walletName) {
-                                            return 1;
-                                        }
-                                        if (a.walletName < b.walletName) {
-                                            return -1;
-                                        }
-                                        return 0;
-                                    });
-                                }
-                                this.$scope.wallets = wallets;
-                                this.$scope.loading = false;
+                        this.$http.get<WalletAddressesResponseModel>(this.Api + "addresses?WalletName=" + walletName + "&AccountName=" + this.AccountName).then(res => {
+                            var wallet = new WalletModel();
+                            wallet.walletName = walletName;
+                            if (res.data) {
+                                wallet.addresses = res.data.addresses.filter(x => !x.isChange);
                             }
+                            this.$http.get<WalletBalanceResponseModel>(this.Api + "balance?WalletName=" + walletName + "&AccountName=" + this.AccountName).then(res => {
+                                if (res.data && res.data.balances) {
+                                    var balance = res.data.balances[0];
+                                    wallet.amountConfirmed = balance.amountConfirmed * this.Satoshis;
+                                    wallet.amountUnconfirmed = balance.amountUnconfirmed * this.Satoshis;
+                                    wallets.push(wallet);
+                                    if (wallets.length == walletFiles.walletsFiles.length) {
+                                        this.$scope.wallets = wallets;
+                                        this.$scope.loading = false;
+                                    }
+                                }
+                            }, err => {
+                                console.error(err);
+                                this.$scope.loading = false;
+                                this.$scope.error = this.errorService.getErrorMessage(err);
+                            });
                         }, err => {
+                            console.error(err);
                             this.$scope.loading = false;
                             this.$scope.error = this.errorService.getErrorMessage(err);
                         });
-                    }, err => {
-                        this.$scope.loading = false;
-                        this.$scope.error = this.errorService.getErrorMessage(err);
-                    });
-                });
+                    }, 100);
+                }
             }
             else {
                 this.$scope.loading = false;
@@ -125,11 +122,13 @@ export class WalletController implements ng.IController {
         }, err => {
             this.$scope.error = this.errorService.getErrorMessage(err);
             this.$scope.loading = false;
+            this.$scope.filesLoadFailed = true;
+            console.error(err);
         });
     }
 
     showRecoverWalletModal() {
-        this.$scope.recoverWalletObject = new RecoverWalletModel();        
+        this.$scope.recoverWalletObject = new RecoverWalletModel();
         ($("#recoverWalletModal") as any).modal("show");
     }
 
@@ -137,10 +136,13 @@ export class WalletController implements ng.IController {
         this.$scope.loading = true;
         var cpy = angular.copy(this.$scope.recoverWalletObject);
         this.$http.post(this.Api + "recover", cpy).then(res => {
-            this.$scope.loading = false;
-            this.$scope.recoverWalletObject.recovered = true;
-            this.loadWalletFiles();
+            this.$timeout(() => {
+                this.$scope.loading = false;
+                this.$scope.recoverWalletObject.recovered = true;
+                this.loadWalletFiles();
+            }, 8000);
         }, err => {
+            console.error(err);
             this.$scope.loading = false;
             this.$scope.recoverWalletObject.recoverError = this.errorService.getErrorMessage(err);
         })
@@ -154,6 +156,7 @@ interface IWalletScope extends ng.IScope {
     loading: boolean;
     wallets: Array<WalletModel>;
     error: string;
+    filesLoadFailed: boolean;
     newWallet: CreateWalletModel;
     sendDst: SendDstModel;
     recoverWalletObject: RecoverWalletModel;
